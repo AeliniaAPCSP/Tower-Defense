@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 import javax.swing.*;
@@ -77,9 +78,15 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int boardWidth = columnCount * tileSize - tileSize * 2;
     private int boardHeight = rowCount * tileSize - tileSize * 2;
 
+    private int animationCounter = 0;
+
     private Image roadImage;
-    private Image towerImage;
+    private Image emptyTowerImage;
+    private Image tower1Image;
+    private Image tower2Image;
     private Image enemy1Image;
+    private Image selectorImage1;
+    private Image selectorImage2;
 
     //R = road, T = tower, ' ' = ground
     private String[] tileMap = {
@@ -90,16 +97,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             " TR T   T   ",
             "  R   RRRRR ",
             "  RRRRR   R ",
-            "    T   T RT",
+            "    S   T RT",
             "1RRRRRR   R ",
             "    T RRRRR ",
             "            "
     };
 
-    HashSet<Block> roads;
-    HashSet<Block> grounds;
-    HashSet<Block> towers;
+    ArrayList<Block> roads;
+    ArrayList<Block> grounds;
+    ArrayList<Block> towers;
     Block enemyTest;
+    Block selector;
 
     Timer gameLoop;
     char[] directions = {'U', 'D', 'L', 'R'}; //up down left right
@@ -117,8 +125,12 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
         //load images
         roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
-        towerImage = new ImageIcon(getClass().getResource("./assets/tower.png")).getImage();
+        emptyTowerImage = new ImageIcon(getClass().getResource("./assets/emptyTower.png")).getImage();
+        tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
+        tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
         enemy1Image = new ImageIcon(getClass().getResource("./assets/enemy1.png")).getImage();
+        selectorImage1 = new ImageIcon(getClass().getResource("./assets/selector1.png")).getImage();
+        selectorImage2 = new ImageIcon(getClass().getResource("./assets/selector2.png")).getImage();
         loadMap();
 
         //how long it takes to start timer, milliseconds gone between frames
@@ -127,9 +139,9 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public void loadMap() {
-        roads = new HashSet<Block>();
-        grounds = new HashSet<Block>();
-        towers = new HashSet<Block>();
+        roads = new ArrayList<Block>();
+        grounds = new ArrayList<Block>();
+        towers = new ArrayList<Block>();
 
         for (int r = 0; r < rowCount; r++) {
             for (int c = 0; c < columnCount; c++) {
@@ -145,7 +157,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                         roads.add(road);
                     }
                     else if (tileMapChar == 'T') { //towers
-                        Block tower = new Block(towerImage, x, y, tileSize, tileSize);
+                        Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
                         towers.add(tower);
                     }
                     else if (tileMapChar == ' ') { //ground
@@ -154,6 +166,11 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                     }
                     else if (tileMapChar == '1') { //enemy1
                         enemyTest = new Block(enemy1Image, x, y, tileSize, tileSize);
+                    }
+                    else if (tileMapChar == 'S') { //tower selector
+                        Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
+                        towers.add(tower);
+                        selector = new Block(selectorImage1, x, y, tileSize, tileSize);
                     }
                 } else {
                     Block ground = new Block(null, x, y, 8, 8);
@@ -180,6 +197,15 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
         g.drawImage(new ImageIcon(getClass().getResource("./assets/towerPanel.png")).getImage(), tileSize * 12, 0, tileSize * 4, tileSize * 10, null);
         g.drawImage(enemy1Image, enemyTest.x, enemyTest.y, enemyTest.width, enemyTest.height, null);
+        if (animationCounter > 7) {
+            g.drawImage(selectorImage1, selector.x, selector.y, selector.width, selector.height, null);
+        } else {
+            g.drawImage(selectorImage2, selector.x, selector.y, selector.width, selector.height, null);
+        }
+        animationCounter++;
+        if (animationCounter == 16) {
+            animationCounter = 0;
+        }
         //score
         /*
         g.setFont(new Font("Arial", Font.PLAIN, 18));
@@ -236,18 +262,50 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     public void keyReleased(KeyEvent e) {
 
         System.out.println("KeyEvent: " + e.getKeyCode());
-        if (e.getKeyCode() == KeyEvent.VK_UP) {
+        if (e.getKeyCode() == 38) {
             enemyTest.updateDirection('U');
         }
-        else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+        else if (e.getKeyCode() == 40) {
             enemyTest.updateDirection('D');
         }
-        else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+        else if (e.getKeyCode() == 37) {
             enemyTest.updateDirection('L');
         }
-        else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+        else if (e.getKeyCode() == 39) {
             enemyTest.updateDirection('R');
         }
-
+        for (int i = 0; i < 10; i++) {
+            if (e.getKeyCode() == 49+i) {
+                selector.x = towers.get(i).x;
+                selector.y = towers.get(i).y;
+            } else if (e.getKeyCode() == 48) {
+                selector.x = towers.get(9).x;
+                selector.y = towers.get(9).y;
+            }
+        }
+        if (e.getKeyCode() == 81) {
+            for (int i = 0; i < 10 ; i++) {
+                if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
+                    if (towers.get(i).image == emptyTowerImage) {
+                        Block temp = new Block(tower1Image, towers.get(i).x, towers.get(i).y, towers.get(i).width, towers.get(i).height);
+                        towers.set(i, temp);
+                    } else {
+                        System.out.println("can't put a new tower there");
+                    }
+                }
+            }
+        }
+        else if (e.getKeyCode() == 87) {
+            for (int i = 0; i < 10 ; i++) {
+                if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
+                    if (towers.get(i).image == emptyTowerImage) {
+                        Block temp = new Block(tower2Image, towers.get(i).x, towers.get(i).y, towers.get(i).width, towers.get(i).height);
+                        towers.set(i, temp);
+                    } else {
+                        System.out.println("can't put a new tower there");
+                    }
+                }
+            }
+        }
     }
 }
