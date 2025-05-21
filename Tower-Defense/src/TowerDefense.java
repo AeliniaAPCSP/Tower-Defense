@@ -1,8 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
 import javax.swing.*;
 
 public class TowerDefense extends JPanel implements ActionListener, KeyListener {
@@ -30,21 +28,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
 
         void updateDirection(char direction) {
-            //char prevDirection = this.direction;
             this.direction = direction;
             updateVelocity();
             this.x += this.velocityX;
             this.y += this.velocityY;
-            /*
-            for (Block road : roads) {
-                if (collision(this, road)) {
-                    this.x -= this.velocityX;
-                    this.y -= this.velocityY;
-                    this.direction = prevDirection;
-                    updateVelocity();
-                }
-            }
-            */
         }
 
         void updateVelocity() {
@@ -81,6 +68,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int animationCounter = 0;
 
     private Image roadImage;
+    private Image leftImage;
+    private Image rightImage;
     private Image emptyTowerImage;
     private Image tower1Image;
     private Image tower2Image;
@@ -90,20 +79,22 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     //R = road, T = tower, ' ' = ground
     private String[] tileMap = {
-            "          R ",
-            "    T     R ",
-            "  RRRRR T RT",
-            "  R   RRRRR ",
-            " TR T   T   ",
-            "  R   RRRRR ",
-            "  RRRRR   R ",
-            "    S   T RT",
-            "1RRRRRR   R ",
-            "    T RRRRR ",
+            "          # ",
+            "    S     # ",
+            "  R###R T #T",
+            "  #   L###L ",
+            " T# T   T   ",
+            "  #   L###L ",
+            "  R###R   # ",
+            "    T   T #T",
+            "1#####R   # ",
+            "    T L###L ",
             "            "
     };
 
     ArrayList<Block> roads;
+    ArrayList<Block> lefts;
+    ArrayList<Block> rights;
     ArrayList<Block> grounds;
     ArrayList<Block> towers;
     Block enemyTest;
@@ -125,6 +116,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
         //load images
         roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
+        leftImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
+        rightImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
         emptyTowerImage = new ImageIcon(getClass().getResource("./assets/emptyTower.png")).getImage();
         tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
         tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
@@ -140,6 +133,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     public void loadMap() {
         roads = new ArrayList<Block>();
+        lefts = new ArrayList<Block>();
+        rights = new ArrayList<Block>();
         grounds = new ArrayList<Block>();
         towers = new ArrayList<Block>();
 
@@ -152,11 +147,16 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 if(r < rowCount - 1 && c < columnCount - 6) {
                     String row = tileMap[r];
                     char tileMapChar = row.charAt(c);
-                    if (tileMapChar == 'R') { //block road
+                    if (tileMapChar == '#') { //block road
                         Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         roads.add(road);
-                    }
-                    else if (tileMapChar == 'T') { //towers
+                    } else if (tileMapChar == 'L') { //block road
+                        Block road = new Block(leftImage, x, y, tileSize, tileSize);
+                        lefts.add(road);
+                    } else if (tileMapChar == 'R') { //block road
+                        Block road = new Block(rightImage, x, y, tileSize, tileSize);
+                        rights.add(road);
+                    } else if (tileMapChar == 'T') { //towers
                         Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
                         towers.add(tower);
                     }
@@ -222,17 +222,44 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         enemyTest.x += enemyTest.velocityX;
         enemyTest.y += enemyTest.velocityY;
 
-        //check wall collisions
-        /*
-        for (Block ground : grounds) {
-            if (collision(enemyTest, ground)) {
-                enemyTest.x -= enemyTest.velocityX;
-                enemyTest.y -= enemyTest.velocityY;
+        for (Block left : lefts) {
+            if (enemyTest.x == left.x && enemyTest.y == left.y) {
+                if (enemyTest.direction == 'U') {
+                    enemyTest.updateDirection('L');
+                } else if (enemyTest.direction == 'D') {
+                    enemyTest.updateDirection('R');
+                } else if (enemyTest.direction == 'L') {
+                    enemyTest.updateDirection('D');
+                } else if (enemyTest.direction == 'R') {
+                    enemyTest.updateDirection('U');
+                }
                 break;
             }
         }
-        */
+
+        for (Block right : rights) {
+            if (enemyTest.x == right.x && enemyTest.y == right.y) {
+                if (enemyTest.direction == 'U') {
+                    enemyTest.updateDirection('R');
+                } else if (enemyTest.direction == 'D') {
+                    enemyTest.updateDirection('L');
+                } else if (enemyTest.direction == 'L') {
+                    enemyTest.updateDirection('U');
+                } else if (enemyTest.direction == 'R') {
+                    enemyTest.updateDirection('D');
+                }
+                break;
+            }
+        }
     }
+
+    /*
+    public String enemyTurn(Block a, Block b) {
+        if (a.x == b.x && a.y == b.y) {
+            return "R";
+        }
+    }
+    */
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -243,13 +270,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             gameLoop.stop();
         }
         */
-    }
-
-    public boolean collision(Block a, Block b) {
-        return  a.x < b.x + b.width &&
-                a.x + a.width > b.x &&
-                a.y < b.y + b.height &&
-                a.y + a.height > b.y;
     }
 
     @Override
