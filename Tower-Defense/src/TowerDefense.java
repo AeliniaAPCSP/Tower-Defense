@@ -59,6 +59,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    class Enemy extends Block {
+        int health;
+        int priority;
+
+        Enemy(Image image, int x, int y, int width, int height, int health, int priority) {
+            super(image, x, y, width, height);
+            this.health = health;
+            this.priority = priority;
+        }
+    }
+
     private int rowCount = 12;
     private int columnCount = 18;
     private int tileSize = 64;
@@ -68,8 +79,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int animationCounter = 0;
 
     private Image roadImage;
-    private Image leftImage;
-    private Image rightImage;
     private Image emptyTowerImage;
     private Image tower1Image;
     private Image tower2Image;
@@ -97,7 +106,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     ArrayList<Block> rights;
     ArrayList<Block> grounds;
     ArrayList<Block> towers;
-    Block enemyTest;
+    ArrayList<Enemy> enemies;
     Block selector;
 
     Timer gameLoop;
@@ -116,8 +125,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
         //load images
         roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
-        leftImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
-        rightImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
         emptyTowerImage = new ImageIcon(getClass().getResource("./assets/emptyTower.png")).getImage();
         tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
         tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
@@ -137,6 +144,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         rights = new ArrayList<Block>();
         grounds = new ArrayList<Block>();
         towers = new ArrayList<Block>();
+        enemies = new ArrayList<Enemy>();
 
         for (int r = 0; r < rowCount; r++) {
             for (int c = 0; c < columnCount; c++) {
@@ -151,10 +159,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                         Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         roads.add(road);
                     } else if (tileMapChar == 'L') { //block road
-                        Block road = new Block(leftImage, x, y, tileSize, tileSize);
+                        Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         lefts.add(road);
                     } else if (tileMapChar == 'R') { //block road
-                        Block road = new Block(rightImage, x, y, tileSize, tileSize);
+                        Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         rights.add(road);
                     } else if (tileMapChar == 'T') { //towers
                         Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
@@ -165,7 +173,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                         grounds.add(ground);
                     }
                     else if (tileMapChar == '1') { //enemy1
-                        enemyTest = new Block(enemy1Image, x, y, tileSize, tileSize);
+                        Block ground = new Block(null, x, y, 8, 8);
+                        grounds.add(ground);
+                        Block enemy1 = new Block(enemy1Image, x, y, tileSize, tileSize);
+                        enemies.add(enemy1);
                     }
                     else if (tileMapChar == 'S') { //tower selector
                         Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
@@ -190,13 +201,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         for (Block road : roads) {
             g.drawImage(road.image, road.x, road.y, road.width, road.height, null);
         }
-
+        for (Block road : lefts) {
+            g.drawImage(road.image, road.x, road.y, road.width, road.height, null);
+        }
+        for (Block road : rights) {
+            g.drawImage(road.image, road.x, road.y, road.width, road.height, null);
+        }
         for (Block tower : towers) {
             g.drawImage(tower.image, tower.x, tower.y, tower.width, tower.height, null);
         }
+        for (Block enemy : enemies) {
+            g.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height, null);
+        }
 
         g.drawImage(new ImageIcon(getClass().getResource("./assets/towerPanel.png")).getImage(), tileSize * 12, 0, tileSize * 4, tileSize * 10, null);
-        g.drawImage(enemy1Image, enemyTest.x, enemyTest.y, enemyTest.width, enemyTest.height, null);
+        
         if (animationCounter > 7) {
             g.drawImage(selectorImage1, selector.x, selector.y, selector.width, selector.height, null);
         } else {
@@ -219,36 +238,40 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public void move() {
-        enemyTest.x += enemyTest.velocityX;
-        enemyTest.y += enemyTest.velocityY;
-
-        for (Block left : lefts) {
-            if (enemyTest.x == left.x && enemyTest.y == left.y) {
-                if (enemyTest.direction == 'U') {
-                    enemyTest.updateDirection('L');
-                } else if (enemyTest.direction == 'D') {
-                    enemyTest.updateDirection('R');
-                } else if (enemyTest.direction == 'L') {
-                    enemyTest.updateDirection('D');
-                } else if (enemyTest.direction == 'R') {
-                    enemyTest.updateDirection('U');
-                }
-                break;
+        for(Block enemy : enemies) {
+            if(enemy.velocityX == 0 && enemy.velocityY == 0) {
+                enemy.velocityX = tileSize/16;
             }
-        }
-
-        for (Block right : rights) {
-            if (enemyTest.x == right.x && enemyTest.y == right.y) {
-                if (enemyTest.direction == 'U') {
-                    enemyTest.updateDirection('R');
-                } else if (enemyTest.direction == 'D') {
-                    enemyTest.updateDirection('L');
-                } else if (enemyTest.direction == 'L') {
-                    enemyTest.updateDirection('U');
-                } else if (enemyTest.direction == 'R') {
-                    enemyTest.updateDirection('D');
+            enemy.x += enemy.velocityX;
+            enemy.y += enemy.velocityY;
+            for (Block left : lefts) {
+                if (enemy.x == left.x && enemy.y == left.y) {
+                    if (enemy.direction == 'U') {
+                        enemy.updateDirection('L');
+                    } else if (enemy.direction == 'D') {
+                        enemy.updateDirection('R');
+                    } else if (enemy.direction == 'L') {
+                        enemy.updateDirection('D');
+                    } else if (enemy.direction == 'R') {
+                        enemy.updateDirection('U');
+                    }
+                    break;
                 }
-                break;
+            }
+
+            for (Block right : rights) {
+                if (enemy.x == right.x && enemy.y == right.y) {
+                    if (enemy.direction == 'U') {
+                        enemy.updateDirection('R');
+                    } else if (enemy.direction == 'D') {
+                        enemy.updateDirection('L');
+                    } else if (enemy.direction == 'L') {
+                        enemy.updateDirection('U');
+                    } else if (enemy.direction == 'R') {
+                        enemy.updateDirection('D');
+                    }
+                    break;
+                }
             }
         }
     }
@@ -280,20 +303,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     @Override
     public void keyReleased(KeyEvent e) {
-
+        /*
         System.out.println("KeyEvent: " + e.getKeyCode());
         if (e.getKeyCode() == 38) {
-            enemyTest.updateDirection('U');
+            enemy.updateDirection('U');
         }
         else if (e.getKeyCode() == 40) {
-            enemyTest.updateDirection('D');
+            enemy.updateDirection('D');
         }
         else if (e.getKeyCode() == 37) {
-            enemyTest.updateDirection('L');
+            enemy.updateDirection('L');
         }
         else if (e.getKeyCode() == 39) {
-            enemyTest.updateDirection('R');
+            enemy.updateDirection('R');
         }
+        */
         for (int i = 0; i < 10; i++) {
             if (e.getKeyCode() == 49+i) {
                 selector.x = towers.get(i).x;
