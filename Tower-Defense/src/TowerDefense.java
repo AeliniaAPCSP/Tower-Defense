@@ -11,8 +11,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         int height;
         Image image;
 
-        int startX;
-        int startY;
         char direction = 'R'; // U D L R
         int velocityX = 0;
         int velocityY = 0;
@@ -23,8 +21,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             this.y = y;
             this.width = width;
             this.height = height;
-            this.startX = x;
-            this.startY = y;
         }
 
         void updateDirection(char direction) {
@@ -52,21 +48,25 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 this.velocityY = 0;
             }
         }
-
-        void reset() {
-            this.x = this.startX;
-            this.y = this.startY;
-        }
     }
 
     class Enemy extends Block {
         int health;
-        int priority;
+        int priority = 0;
 
-        Enemy(Image image, int x, int y, int width, int height, int health, int priority) {
+        Enemy(Image image, int x, int y, int width, int height, int health) {
             super(image, x, y, width, height);
             this.health = health;
-            this.priority = priority;
+        }
+    }
+
+    class Tower extends Block {
+        int damage;
+        int range;
+
+        Tower(Image image, int x, int y, int width, int height, int damage) {
+            super(image, x, y, width, height);
+            this.damage = damage;
         }
     }
 
@@ -86,10 +86,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private Image selectorImage1;
     private Image selectorImage2;
 
-    //R = road, T = tower, ' ' = ground
+    //# = road, L = left turn, R = right turn, T = tower, ' ' = ground
     private String[] tileMap = {
             "          # ",
-            "    S     # ",
+            "    T     # ",
             "  R###R T #T",
             "  #   L###L ",
             " T# T   T   ",
@@ -101,12 +101,13 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             "            "
     };
 
-    ArrayList<Block> roads;
-    ArrayList<Block> lefts;
-    ArrayList<Block> rights;
-    ArrayList<Block> grounds;
-    ArrayList<Block> towers;
-    ArrayList<Enemy> enemies;
+    ArrayList<Block> roads = new ArrayList<Block>();
+    ArrayList<Block> lefts = new ArrayList<Block>();
+    ArrayList<Block> rights = new ArrayList<Block>();
+    ArrayList<Block> grounds = new ArrayList<Block>();
+    ArrayList<Block> emptyTowers = new ArrayList<Block>(10);
+    ArrayList<Tower> towers = new ArrayList<Tower>(10);
+    ArrayList<Enemy> enemies = new ArrayList<Enemy>();
     Block selector;
 
     Timer gameLoop;
@@ -139,12 +140,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public void loadMap() {
-        roads = new ArrayList<Block>();
-        lefts = new ArrayList<Block>();
-        rights = new ArrayList<Block>();
-        grounds = new ArrayList<Block>();
-        towers = new ArrayList<Block>();
-        enemies = new ArrayList<Enemy>();
 
         for (int r = 0; r < rowCount; r++) {
             for (int c = 0; c < columnCount; c++) {
@@ -165,23 +160,16 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                         Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         rights.add(road);
                     } else if (tileMapChar == 'T') { //towers
-                        Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
-                        towers.add(tower);
-                    }
-                    else if (tileMapChar == ' ') { //ground
+                        Block emptyTower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
+                        emptyTowers.add(emptyTower);
+                    }else if (tileMapChar == ' ') { //ground
                         Block ground = new Block(null, x, y, 8, 8);
                         grounds.add(ground);
-                    }
-                    else if (tileMapChar == '1') { //enemy1
+                    }else if (tileMapChar == '1') { //enemy1
                         Block ground = new Block(null, x, y, 8, 8);
                         grounds.add(ground);
-                        Block enemy1 = new Block(enemy1Image, x, y, tileSize, tileSize);
+                        Enemy enemy1 = new Enemy(enemy1Image, x, y, tileSize, tileSize, 10);
                         enemies.add(enemy1);
-                    }
-                    else if (tileMapChar == 'S') { //tower selector
-                        Block tower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
-                        towers.add(tower);
-                        selector = new Block(selectorImage1, x, y, tileSize, tileSize);
                     }
                 } else {
                     Block ground = new Block(null, x, y, 8, 8);
@@ -189,6 +177,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 }
             }
         }
+        selector = new Block(selectorImage1, emptyTowers.get(0).x, emptyTowers.get(0).y, tileSize, tileSize);
     }
 
     public void paintComponent(Graphics g) {
@@ -206,6 +195,9 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
         for (Block road : rights) {
             g.drawImage(road.image, road.x, road.y, road.width, road.height, null);
+        }
+        for (Block tower : emptyTowers) {
+            g.drawImage(tower.image, tower.x, tower.y, tower.width, tower.height, null);
         }
         for (Block tower : towers) {
             g.drawImage(tower.image, tower.x, tower.y, tower.width, tower.height, null);
@@ -320,19 +312,20 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         */
         for (int i = 0; i < 10; i++) {
             if (e.getKeyCode() == 49+i) {
-                selector.x = towers.get(i).x;
-                selector.y = towers.get(i).y;
+                selector.x = emptyTowers.get(i).x;
+                selector.y = emptyTowers.get(i).y;
             } else if (e.getKeyCode() == 48) {
-                selector.x = towers.get(9).x;
-                selector.y = towers.get(9).y;
+                selector.x = emptyTowers.get(9).x;
+                selector.y = emptyTowers.get(9).y;
             }
         }
         if (e.getKeyCode() == 81) {
-            for (int i = 0; i < 10 ; i++) {
-                if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
-                    if (towers.get(i).image == emptyTowerImage) {
-                        Block temp = new Block(tower1Image, towers.get(i).x, towers.get(i).y, towers.get(i).width, towers.get(i).height);
+            for (int i = 0; i < 10; i++) {
+                if (selector.x == emptyTowers.get(i).x && selector.y == emptyTowers.get(i).y) {
+                    if (emptyTowers.get(i) != null) {
+                        Tower temp = new Tower(tower1Image, emptyTowers.get(i).x, emptyTowers.get(i).y, emptyTowers.get(i).width, emptyTowers.get(i).height, 10);
                         towers.set(i, temp);
+                        emptyTowers.set(i, null);
                     } else {
                         System.out.println("can't put a new tower there");
                     }
@@ -340,11 +333,12 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             }
         }
         else if (e.getKeyCode() == 87) {
-            for (int i = 0; i < 10 ; i++) {
-                if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
-                    if (towers.get(i).image == emptyTowerImage) {
-                        Block temp = new Block(tower2Image, towers.get(i).x, towers.get(i).y, towers.get(i).width, towers.get(i).height);
+            for (int i = 0; i < 10; i++) {
+                if (selector.x == emptyTowers.get(i).x && selector.y == emptyTowers.get(i).y) {
+                    if (emptyTowers.get(i) != null) {
+                        Tower temp = new Tower(tower2Image, emptyTowers.get(i).x, emptyTowers.get(i).y, emptyTowers.get(i).width, emptyTowers.get(i).height, 10);
                         towers.set(i, temp);
+                        emptyTowers.set(i, null);
                     } else {
                         System.out.println("can't put a new tower there");
                     }
