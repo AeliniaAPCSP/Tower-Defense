@@ -64,9 +64,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         int damage;
         int range;
 
-        Tower(Image image, int x, int y, int width, int height, int damage) {
+        Tower(Image image, int x, int y, int width, int height, int damage, int range) {
             super(image, x, y, width, height);
-            this.damage = damage;
+            this.damage = range;
+            this.range = range;
         }
     }
 
@@ -79,7 +80,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int animationCounter = 0;
 
     private Image roadImage;
-    private Image emptyTowerImage;
     private Image tower1Image;
     private Image tower2Image;
     private Image enemy1Image;
@@ -89,15 +89,15 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     //# = road, L = left turn, R = right turn, T = tower, ' ' = ground
     private String[] tileMap = {
             "          # ",
-            "    T     # ",
-            "  R###R T #T",
+            "          # ",
+            "  R###R   # ",
             "  #   L###L ",
-            " T# T   T   ",
+            "  #         ",
             "  #   L###L ",
             "  R###R   # ",
-            "    T   T #T",
+            "          # ",
             "1#####R   # ",
-            "    T L###L ",
+            "      L###L ",
             "            "
     };
 
@@ -105,7 +105,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     ArrayList<Block> lefts = new ArrayList<Block>();
     ArrayList<Block> rights = new ArrayList<Block>();
     ArrayList<Block> grounds = new ArrayList<Block>();
-    ArrayList<Block> emptyTowers = new ArrayList<Block>(10);
     ArrayList<Tower> towers = new ArrayList<Tower>(10);
     ArrayList<Enemy> enemies = new ArrayList<Enemy>();
     Block selector;
@@ -126,7 +125,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
         //load images
         roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
-        emptyTowerImage = new ImageIcon(getClass().getResource("./assets/emptyTower.png")).getImage();
         tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
         tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
         enemy1Image = new ImageIcon(getClass().getResource("./assets/enemy1.png")).getImage();
@@ -159,13 +157,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                     } else if (tileMapChar == 'R') { //block road
                         Block road = new Block(roadImage, x, y, tileSize, tileSize);
                         rights.add(road);
-                    } else if (tileMapChar == 'T') { //towers
-                        Block emptyTower = new Block(emptyTowerImage, x, y, tileSize, tileSize);
-                        emptyTowers.add(emptyTower);
-                    }else if (tileMapChar == ' ') { //ground
+                    } else if (tileMapChar == ' ') { //ground
                         Block ground = new Block(null, x, y, 8, 8);
                         grounds.add(ground);
-                    }else if (tileMapChar == '1') { //enemy1
+                    } else if (tileMapChar == '1') { //enemy1
                         Block ground = new Block(null, x, y, 8, 8);
                         grounds.add(ground);
                         Enemy enemy1 = new Enemy(enemy1Image, x, y, tileSize, tileSize, 10);
@@ -177,7 +172,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 }
             }
         }
-        selector = new Block(selectorImage1, emptyTowers.get(0).x, emptyTowers.get(0).y, tileSize, tileSize);
+        selector = new Block(selectorImage1, tileSize*3/2, tileSize*3/2, tileSize, tileSize);
     }
 
     public void paintComponent(Graphics g) {
@@ -195,9 +190,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
         for (Block road : rights) {
             g.drawImage(road.image, road.x, road.y, road.width, road.height, null);
-        }
-        for (Block tower : emptyTowers) {
-            g.drawImage(tower.image, tower.x, tower.y, tower.width, tower.height, null);
         }
         for (Block tower : towers) {
             g.drawImage(tower.image, tower.x, tower.y, tower.width, tower.height, null);
@@ -295,21 +287,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     @Override
     public void keyReleased(KeyEvent e) {
-        /*
+
         System.out.println("KeyEvent: " + e.getKeyCode());
-        if (e.getKeyCode() == 38) {
-            enemy.updateDirection('U');
+        if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == 87) {
+            selector.y -= tileSize;
         }
-        else if (e.getKeyCode() == 40) {
-            enemy.updateDirection('D');
+        else if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == 83) {
+            selector.y += tileSize;
         }
-        else if (e.getKeyCode() == 37) {
-            enemy.updateDirection('L');
+        else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == 65) {
+            selector.x -= tileSize;
         }
-        else if (e.getKeyCode() == 39) {
-            enemy.updateDirection('R');
+        else if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == 68) {
+            selector.x += tileSize;
         }
-        */
+        /*
         for (int i = 0; i < 10; i++) {
             if (e.getKeyCode() == 49+i) {
                 selector.x = emptyTowers.get(i).x;
@@ -319,29 +311,46 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 selector.y = emptyTowers.get(9).y;
             }
         }
-        if (e.getKeyCode() == 81) {
-            for (int i = 0; i < 10; i++) {
-                if (selector.x == emptyTowers.get(i).x && selector.y == emptyTowers.get(i).y) {
-                    if (emptyTowers.get(i) != null) {
-                        Tower temp = new Tower(tower1Image, emptyTowers.get(i).x, emptyTowers.get(i).y, emptyTowers.get(i).width, emptyTowers.get(i).height, 10);
-                        towers.set(i, temp);
-                        emptyTowers.set(i, null);
-                    } else {
-                        System.out.println("can't put a new tower there");
-                    }
+        */
+        if (e.getKeyCode() == 82) {
+            for (int j = 0; j < towers.size(); j++) {
+                if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
+                    System.out.println("Theres already a tower there");
+                    break;
                 }
             }
+
+            if (selector.x == roads.get(i).x && selector.y == roads.get(i).y ||
+                    selector.x == lefts.get(i).x && selector.y == lefts.get(i).y ||
+                    selector.x == rights.get(i).x && selector.y == rights.get(i).y)
+            {
+                System.out.println("You can't put a tower on roads");
+            }
+            Tower tower = new Tower(tower1Image, selector.x, selector.y, tileSize, tileSize, 10, 5);
+            towers.add(i, tower);
+                } else if (selector.x == roads.get(i).x && selector.y == roads.get(i).y ||
+                           selector.x == lefts.get(i).x && selector.y == lefts.get(i).y ||
+                           selector.x == rights.get(i).x && selector.y == rights.get(i).y)
+                {
+                    System.out.println("You can't put a tower on roads");
+                }
         }
-        else if (e.getKeyCode() == 87) {
-            for (int i = 0; i < 10; i++) {
-                if (selector.x == emptyTowers.get(i).x && selector.y == emptyTowers.get(i).y) {
-                    if (emptyTowers.get(i) != null) {
-                        Tower temp = new Tower(tower2Image, emptyTowers.get(i).x, emptyTowers.get(i).y, emptyTowers.get(i).width, emptyTowers.get(i).height, 10);
-                        towers.set(i, temp);
-                        emptyTowers.set(i, null);
-                    } else {
-                        System.out.println("can't put a new tower there");
+        else if (e.getKeyCode() == 84) {
+            for (int i = 0; i < grounds.size(); i++) {
+                if (selector.x == grounds.get(i).x && selector.y == grounds.get(i).y) {
+                    for (int j = 0; j < towers.size(); j++) {
+                        if (selector.x == towers.get(i).x && selector.y == towers.get(i).y) {
+                            System.out.println("Theres already a tower there");
+                            break;
+                        }
                     }
+                    Tower tower = new Tower(tower1Image, selector.x, selector.y, tileSize, tileSize, 20, 3);
+                    towers.add(i, tower);
+                } else if (selector.x == roads.get(i).x && selector.y == roads.get(i).y ||
+                        selector.x == lefts.get(i).x && selector.y == lefts.get(i).y ||
+                        selector.x == rights.get(i).x && selector.y == rights.get(i).y)
+                {
+                    System.out.println("You can't put a tower on roads");
                 }
             }
         }
