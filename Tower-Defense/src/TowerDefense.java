@@ -87,6 +87,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     private int animationCounter = 0;
     private int timer = 0;
+    private int gold = 20;
 
     private Image roadImage;
     private Image leftImage;
@@ -238,16 +239,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         if (animationCounter == 16) {
             animationCounter = 0;
         }
-        //score
-        /*
-        g.setFont(new Font("Arial", Font.PLAIN, 18));
-        if (gameOver) {
-            g.drawString("Game Over: " + String.valueOf(score), tileSize/2, tileSize/2);
-        }
-        else {
-            g.drawString("x" + String.valueOf(lives) + " Score: " + String.valueOf(score), tileSize/2, tileSize/2);
-        }
-        */
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        g.drawString("gold: " + gold, tileSize/8, tileSize/8+16);
     }
 
     public boolean isSelectorIsOnTileOfType(char type) {
@@ -386,39 +379,75 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             }
             enemy.x += enemy.velocityX;
             enemy.y += enemy.velocityY;
-
-            if (isEnemyIsOnTileOfType('L', enemy)) {
-                if (enemy.direction == 'U') {
-                    enemy.updateDirection('L');
-                } else if (enemy.direction == 'D') {
-                    enemy.updateDirection('R');
-                } else if (enemy.direction == 'L') {
-                    enemy.updateDirection('D');
-                } else if (enemy.direction == 'R') {
-                    enemy.updateDirection('U');
-                }
-            } else if (isEnemyIsOnTileOfType('R', enemy)) {
-                if (enemy.direction == 'U') {
-                    enemy.updateDirection('R');
-                } else if (enemy.direction == 'D') {
-                    enemy.updateDirection('L');
-                } else if (enemy.direction == 'L') {
-                    enemy.updateDirection('U');
-                } else if (enemy.direction == 'R') {
-                    enemy.updateDirection('D');
+            enemy.priority++;
+            if (((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0) {
+                if (isEnemyIsOnTileOfType('L', enemy)) {
+                    if (enemy.direction == 'U') {
+                        enemy.updateDirection('L');
+                    } else if (enemy.direction == 'D') {
+                        enemy.updateDirection('R');
+                    } else if (enemy.direction == 'L') {
+                        enemy.updateDirection('D');
+                    } else if (enemy.direction == 'R') {
+                        enemy.updateDirection('U');
+                    }
+                } else if (isEnemyIsOnTileOfType('R', enemy)) {
+                    if (enemy.direction == 'U') {
+                        enemy.updateDirection('R');
+                    } else if (enemy.direction == 'D') {
+                        enemy.updateDirection('L');
+                    } else if (enemy.direction == 'L') {
+                        enemy.updateDirection('U');
+                    } else if (enemy.direction == 'R') {
+                        enemy.updateDirection('D');
+                    }
                 }
             }
         }
     }
 
     public void attack() {
-        for (Tower tower : towers) {
-            for (int i = 0; i < enemies.size(); i++) {
-                if (enemyInRange(tower, enemies.get(i))) {
-                    enemies.get(i).health-=tower.damage;
-                    System.out.println(enemies.get(i).health);
-                    if(enemies.get(i).health <= 0) {
-                        enemies.remove(i);
+        if (enemies.size() != 0) {
+            int highestPriority = 0;
+            int enemyIndex = -1;
+            for (Tower tower : towers) {
+                if (tower.doesAOE == true) {
+                    for (int i = 0; i < enemies.size(); i++) {
+                        if (enemyInRange(tower, enemies.get(i))) {
+                            enemies.get(i).health -= tower.damage;
+                            if (enemies.get(i).health <= 0) {
+                                if (enemies.get(i).type == '1') {
+                                    gold++;
+                                } else if (enemies.get(i).type == '2') {
+                                    gold++;
+                                }
+                                enemies.remove(i);
+                            }
+                        }
+                    }
+                } else if (tower.doesAOE == false) {
+                    for (int i = 0; i < enemies.size(); i++) {
+                        if (enemyInRange(tower, enemies.get(i))) {
+                            if (enemies.get(i).priority > highestPriority) {
+                                highestPriority = enemies.get(i).priority;
+                                enemyIndex = i;
+                                System.out.println(enemyIndex);
+                            }
+                        }
+                    }
+
+                    if (enemyIndex == -1) {
+                        System.out.println("enemyIndex: " + enemyIndex);
+                        enemies.get(enemyIndex).health -= tower.damage;
+                        //System.out.println(enemies.get(i).health);
+                        if (enemies.get(enemyIndex).health <= 0) {
+                            if (enemies.get(enemyIndex).type == '1') {
+                                gold++;
+                            } else if (enemies.get(enemyIndex).type == '2') {
+                                gold++;
+                            }
+                            enemies.remove(enemyIndex);
+                        }
                     }
                 }
             }
@@ -427,9 +456,9 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     public void createWave() {
         wave = new ArrayList<Integer>();
-        for (int i = 0; i < waveNumber*50 + 1000; i++) {
+        for (int i = 0; i < waveNumber*50 + 100; i++) {
             wave.add(1);
-            for (int j = 0; j < (int) (Math.random()*51) && i < waveNumber*50 + 1000; j++) {
+            for (int j = 0; j < (int) (Math.random()*101) && i < waveNumber*50 + 100; j++) {
                 wave.add(0);
                 i++;
             }
@@ -437,17 +466,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public void summon() {
-        if(wave.get(waveCounter) == 1) {
-            Enemy enemy = new Enemy(enemy1Image, tileSize / 2, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 200, 1);
-            enemies.add(enemy);
-            System.out.println("1");
-        } else if(wave.get(waveCounter) == 2) {
-            Enemy enemy = new Enemy(enemy1Image, tileSize / 2, tileSize * 7 + tileSize / 2, tileSize, tileSize, '2', 150, 1.5);
-            enemies.add(enemy);
+        if (waveCounter < waveNumber*50 + 100) {
+            if (wave.get(waveCounter) == 1) {
+                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 200, 1);
+                enemies.add(enemy);
+            } else if (wave.get(waveCounter) == 2) {
+                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '2', 150, 1.5);
+                enemies.add(enemy);
+            }
+        } else if (waveCounter == waveNumber*50 + 300) {
+            waveNumber++;
+            waveCounter = 0;
+            createWave();
         }
         waveCounter++;
         System.out.println(waveCounter);
-        System.out.println(wave.get(waveCounter));
     }
 
     @Override
