@@ -119,7 +119,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     private int waveNumber = 1;
     private ArrayList<Integer> wave;
-    private int waveCounter = 0;
+    private int waveCounter = -200;
 
     ArrayList<Tile> tiles = new ArrayList<Tile>();
     ArrayList<Tower> towers = new ArrayList<Tower>();
@@ -149,7 +149,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         createWave();
 
         //how long it takes to start timer, milliseconds gone between frames
-        gameLoop = new Timer(20, this); //50fps (1000/20)
+        gameLoop = new Timer(40, this); //25fps (1000/40)
         gameLoop.start();
     }
 
@@ -237,8 +237,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         if (animationCounter == 16) {
             animationCounter = 0;
         }
-        g.setFont(new Font("Arial", Font.BOLD, 16));
-        g.drawString("Gold: " + gold + "   Current Wave: " + waveNumber + "   Health Left: " + baseHealth, tileSize/8, tileSize/8+16);
+        g.setFont(new Font("Arial", Font.BOLD, 16 * tileSize / 64));
+        g.drawString("Gold: " + gold + "   Current Wave: " + waveNumber + "   Health Left: " + baseHealth, tileSize/8, tileSize/8 + tileSize/4);
     }
 
     public boolean isSelectorIsOnTileOfType(char type) {
@@ -372,7 +372,9 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     public void killEnemyIfHealth0() {
         for (int i = 0; i < enemies.size(); i++) {
-            if (enemies.get(i).health <= 0) {
+            if (enemies.get(i).health <= -10000) {
+                enemies.remove(i);
+            } else if (enemies.get(i).health <= 0) {
                 if (enemies.get(i).type == '1') {
                     gold++;
                 } else if (enemies.get(i).type == '2') {
@@ -390,7 +392,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                     enemy.y <= -enemy.height ||
                     enemy.y >= rowCount * tileSize - tileSize) &&
                     enemy.priority > 10) {
-                enemy.health = 0;
+                enemy.health = -10000;
                 baseHealth--;
             } else {
                 if (enemy.velocityX == 0 && enemy.velocityY == 0) {
@@ -490,7 +492,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public void summon() {
-        if (waveCounter < waveNumber*50 + 100) {
+        if (waveCounter < waveNumber*50 + 100 && waveCounter > 0) {
             if (wave.get(waveCounter) == 1) {
                 Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 300, 0);
                 enemies.add(enemy);
@@ -536,7 +538,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 selector.y -= tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == 83) {
-            if(selector.y != rowCount * tileSize - tileSize * 2) {
+            if(selector.y != rowCount * tileSize - tileSize*5/2) {
                 selector.y += tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == 65) {
@@ -544,7 +546,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 selector.x -= tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == 68) {
-            if (selector.x != rowCount * tileSize - tileSize * 2 - tileSize * 4) {
+            if (selector.x != rowCount * tileSize - tileSize*3/2) {
                 selector.x += tileSize;
             }
         }
