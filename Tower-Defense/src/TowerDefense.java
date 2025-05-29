@@ -33,20 +33,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
 
         void updateVelocity() {
+            int temp = Math.abs(this.velocityX + this.velocityY);
             if (this.direction == 'U') {
                 this.velocityX = 0;
-                this.velocityY = -tileSize/16;
+                this.velocityY = -temp;
             }
             else if (this.direction == 'D') {
                 this.velocityX = 0;
-                this.velocityY = tileSize/16;
+                this.velocityY = temp;
             }
             else if (this.direction == 'L') {
-                this.velocityX = -tileSize/16;
+                this.velocityX = -temp;
                 this.velocityY = 0;
             }
             else if (this.direction == 'R') {
-                this.velocityX = tileSize/16;
+                this.velocityX = temp;
                 this.velocityY = 0;
             }
         }
@@ -54,7 +55,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     class Enemy extends Tile {
         int health;
-        int priority = 0;
+        int priority;
         int speed;
         int step = 0;
 
@@ -62,6 +63,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             super(image, x, y, width, height, type);
             this.health = health;
             this.speed = speed;
+            priority = 0;
         }
     }
 
@@ -80,6 +82,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    //variables for the board
     private int rowCount = 12;
     private int columnCount = 13;
     private int tileSize = 64;
@@ -87,21 +90,26 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int boardHeight = (rowCount+1) * tileSize - tileSize * 2;
 
     private int animationCounter = 0;
-    private int gold = 20;
+    private int gold = 30;
     private int confirmation = 0;
     private int baseHealth = 10;
+    private String output = "";
+    private int outputTimer = 0;
 
-    private Image roadImage;
-    private Image leftImage;
-    private Image rightImage;
-    private Image groundImage;
-    private Image tower1Image;
-    private Image tower2Image;
-    private Image enemy1Image;
-    private Image selectorImage1;
-    private Image selectorImage2;
+    //Image variable creation
+    private Image roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
+    //private Image leftImage = new ImageIcon(getClass().getResource("./assets/left.png")).getImage();
+    //private Image rightImage = new ImageIcon(getClass().getResource("./assets/right.png")).getImage();
+    private Image groundImage = new ImageIcon(getClass().getResource("./assets/ground.png")).getImage();
+    private Image tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
+    private Image tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
+    private Image enemy1Image = new ImageIcon(getClass().getResource("./assets/enemy1.png")).getImage();
+    private Image enemy2Image = new ImageIcon(getClass().getResource("./assets/enemy2.png")).getImage();
+    private Image selectorImage1 = new ImageIcon(getClass().getResource("./assets/selector1.png")).getImage();
+    private Image selectorImage2 = new ImageIcon(getClass().getResource("./assets/selector2.png")).getImage();
 
-    //# = road, L = left turn, R = right turn, T = tower, ' ' = ground
+    //# = road, L = left turn, R = right turn, ' ' = ground
+    //1 = tower1, 2 = tower2 but those are only added to tileMap during the game
     private char[][] tileMap = {
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' '},
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' '},
@@ -117,6 +125,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '}
     };
 
+    //for the enemy waves
     private int waveNumber = 1;
     private ArrayList<Integer> wave;
     private int waveCounter = -200;
@@ -131,20 +140,11 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     TowerDefense() {
         setPreferredSize(new Dimension(boardWidth, boardHeight));
-        setBackground(new Color(34, 177, 76));
+        //bright pink because this is only visible when something goes wrong
+        setBackground(new Color(255, 0, 255));
         addKeyListener(this);
         setFocusable(true);
 
-        //load images
-        roadImage = new ImageIcon(getClass().getResource("./assets/road.png")).getImage();
-        leftImage = new ImageIcon(getClass().getResource("./assets/left.png")).getImage();
-        rightImage = new ImageIcon(getClass().getResource("./assets/right.png")).getImage();
-        groundImage = new ImageIcon(getClass().getResource("./assets/ground.png")).getImage();
-        tower1Image = new ImageIcon(getClass().getResource("./assets/tower1.png")).getImage();
-        tower2Image = new ImageIcon(getClass().getResource("./assets/tower2.png")).getImage();
-        enemy1Image = new ImageIcon(getClass().getResource("./assets/enemy1.png")).getImage();
-        selectorImage1 = new ImageIcon(getClass().getResource("./assets/selector1.png")).getImage();
-        selectorImage2 = new ImageIcon(getClass().getResource("./assets/selector2.png")).getImage();
         loadMap();
         createWave();
 
@@ -171,41 +171,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 }
             }
         }
-        /*
-        for (int r = 0; r < rowCount; r++) {
-            for (int c = 0; c < columnCount; c++) {
-
-                int x = c * tileSize - tileSize / 2;
-                int y = r * tileSize - tileSize / 2;
-
-                if(r < rowCount && c < columnCount) {
-                    String row = tileMap[r];
-                    char tileMapChar = row.charAt(c);
-                    if (tileMapChar == '#') { //block road
-                        Tile road = new Tile(roadImage, x, y, tileSize, tileSize, "road");
-                        tiles.add(road);
-                    } else if (tileMapChar == 'L') { //block road
-                        Tile road = new Tile(leftImage, x, y, tileSize, tileSize, "left");
-                        tiles.add(road);
-                    } else if (tileMapChar == 'R') { //block road
-                        Tile road = new Tile(rightImage, x, y, tileSize, tileSize, "right");
-                        tiles.add(road);
-                    } else if (tileMapChar == ' ') { //ground
-                        Tile ground = new Tile(null, x, y, 8, 8, "ground");
-                        tiles.add(ground);
-                    } else if (tileMapChar == '1') { //enemy1
-                        Tile ground = new Tile(null, x, y, 8, 8, "ground");
-                        tiles.add(ground);
-                        Enemy enemy1 = new Enemy(enemy1Image, x, y, tileSize, tileSize, "enemy1", 100, 1);
-                        enemies.add(enemy1);
-                    }
-                } else {
-                    Tile ground = new Tile(null, x, y, 8, 8, "ground");
-                    tiles.add(ground);
-                }
-            }
-        }
-        */
         selector = new Tile(selectorImage1, tileSize/2, tileSize/2, tileSize, tileSize, 'S');
     }
 
@@ -226,8 +191,10 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             g.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height, null);
         }
 
+        //places the info panel on the right of the board
         g.drawImage(new ImageIcon(getClass().getResource("./assets/towerPanel.png")).getImage(), tileSize * 12, 0, tileSize * 4, tileSize * rowCount-tileSize, null);
 
+        //animates the selector
         if (animationCounter > 7) {
             g.drawImage(selectorImage1, selector.x, selector.y, selector.width, selector.height, null);
         } else {
@@ -237,10 +204,22 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         if (animationCounter == 16) {
             animationCounter = 0;
         }
+
+        //displays numbers in top left
         g.setFont(new Font("Arial", Font.BOLD, 16 * tileSize / 64));
         g.drawString("Gold: " + gold + "   Current Wave: " + waveNumber + "   Health Left: " + baseHealth, tileSize/8, tileSize/8 + tileSize/4);
+
+        //displays messages to player on bottom left
+        if(!(output.equals("")) && outputTimer > 0) {
+            g.setFont(new Font("Arial", Font.BOLD, 32 * tileSize / 64));
+            g.drawString(output, tileSize/8, tileSize * rowCount - tileSize - tileSize/4);
+            outputTimer--;
+        } else if (!(output.equals(""))) {
+            output = "";
+        }
     }
 
+    //Checks if the selector is on the type of tile indicated by char type
     public boolean isSelectorIsOnTileOfType(char type) {
         int x = (selector.x - tileSize / 2) / tileSize + 1;
         int y = (selector.y - tileSize / 2) / tileSize + 1;
@@ -257,15 +236,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         return (tileMap[y][x] == type);
     }
 
+    //Checks if the enemy entered is on the type of tile indicated by char type
     public boolean isEnemyIsOnTileOfType(char type, Enemy enemy) {
-        if(((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0) {
+        if(((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0 ) {
             int x = (enemy.x - tileSize / 2) / tileSize + 1;
             int y = (enemy.y - tileSize / 2) / tileSize + 1;
-            return (tileMap[y][x] == type);
+            if(x >= 0 && y >= 0) {
+                return (tileMap[y][x] == type);
+            }
         }
         return false;
     }
 
+    //terrifying block of if statements and so many operaters.
+    //it checks if the enemy hitbox is inside the hitbox of
+    //tower which depends based on the range value of the tower.
     public boolean enemyInRange(Tower tower, Enemy enemy) {
         if (tower.range == 1) {
             if (enemy.x + enemy.width > tower.x &&
@@ -370,6 +355,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         return false;
     }
 
+    //pretty self-explanatory
     public void killEnemyIfHealth0() {
         for (int i = 0; i < enemies.size(); i++) {
             if (enemies.get(i).health <= -10000) {
@@ -385,6 +371,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    //moves all the enemies
     public void move() {
         for(Enemy enemy : enemies) {
             if((enemy.x <= -enemy.width ||
@@ -396,12 +383,15 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 baseHealth--;
             } else {
                 if (enemy.velocityX == 0 && enemy.velocityY == 0) {
-                    enemy.velocityX = tileSize / 16;
+                    if(enemy.type == '1') {
+                        enemy.velocityX = tileSize / 16;
+                    } else if (enemy.type == '2') {
+                        enemy.velocityX = tileSize / 8;
+                    }
                 }
 
                 enemy.x += enemy.velocityX;
                 enemy.y += enemy.velocityY;
-                enemy.priority++;
 
                 if (((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0) {
                     if (isEnemyIsOnTileOfType('L', enemy)) {
@@ -428,8 +418,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 }
             }
         }
+        //updates all enemy priority values
+        for(Enemy enemy : enemies) {
+            if(enemy.type == '1') {
+                enemy.priority++;
+            } else if (enemy.type == '2') {
+                enemy.priority+=2;
+            }
+        }
     }
 
+    //makes all the towers attack any enemies within their ranges
     public void attack() {
         if (enemies.size() != 0) {
             int highestPriority = 0;
@@ -464,9 +463,12 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    //creates a long ArrayList that that summon() will read through to
+    //decide when to summon an enemy or not and which type to summon
     public void createWave() {
         wave = new ArrayList<Integer>();
         for (int i = 0; i < waveNumber*50 + 100; i++) {
+            //for when I add more enemies
             /*if(waveNumber >= 10) {
                 if(Math.random() > 0.33) {
                     wave.add(3);
@@ -475,7 +477,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 } else {
                     wave.add(1);
                 }
-            } else*/ if (waveNumber >= 5) {
+            } else*/ if (waveNumber >= 3) {
                 if(Math.random() > 0.6) {
                     wave.add(2);
                 } else {
@@ -484,20 +486,21 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             } else {
                 wave.add(1);
             }
-            for (int j = 0; j < (int) (Math.random() * (100 * Math.pow(.95, waveNumber))) && i < waveNumber*50 + 100; j++) {
+            for (int j = 0; j < (int) (Math.random() * (200 * Math.pow(.6, waveNumber))) && i < waveNumber*50 + 100; j++) {
                 wave.add(0);
                 i++;
             }
         }
     }
 
+    //reads the ArrayList wave that createWave() creates
     public void summon() {
         if (waveCounter < waveNumber*50 + 100 && waveCounter > 0) {
             if (wave.get(waveCounter) == 1) {
-                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 300, 0);
+                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 375, 0);
                 enemies.add(enemy);
             } else if (wave.get(waveCounter) == 2) {
-                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '2', 200, 2);
+                Enemy enemy = new Enemy(enemy2Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '2', 275, 2);
                 enemies.add(enemy);
             }
         } else if (waveCounter == waveNumber*50 + 300) {
@@ -509,6 +512,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         //System.out.println(waveCounter);
     }
 
+    //preforms all the game's constantly repeated functions
     @Override
     public void actionPerformed(ActionEvent e) {
         move();
@@ -532,7 +536,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         int x = (selector.x - tileSize / 2) / tileSize + 1;
         int y = (selector.y - tileSize / 2) / tileSize + 1;
 
-        System.out.println("KeyEvent: " + e.getKeyCode());
+        //System.out.println("KeyEvent: " + e.getKeyCode());
         if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == 87) {
             if(selector.y != tileSize/2) {
                 selector.y -= tileSize;
@@ -551,13 +555,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             }
         }
 
+        //places tower1
         if (e.getKeyCode() == 82) {
             if (isSelectorIsOnTileOfType('1') || isSelectorIsOnTileOfType('2')) {
-                System.out.println("Theres already a tower there");
+                output = "Theres already a tower there";
+                outputTimer = 30;
             } else if (isSelectorIsOnTileOfType('#') || isSelectorIsOnTileOfType('L') || isSelectorIsOnTileOfType('R')) {
-                System.out.println("You can't put a tower on roads");
+                output = "You can't put a tower on roads";
+                outputTimer = 30;
             } else if (gold < 20) {
-                System.out.println("You need 20 gold");
+                output = "You need 20 gold";
+                outputTimer = 30;
             } else {
                 Tower tower = new Tower(tower1Image, selector.x, selector.y, tileSize, tileSize, '1', 10, 1, 5, false);
                 tileMap[y][x] = '1';
@@ -566,13 +574,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             }
         }
 
+        //places tower2
         if (e.getKeyCode() == 84) {
             if (isSelectorIsOnTileOfType('1') || isSelectorIsOnTileOfType('2')) {
-                System.out.println("Theres already a tower there");
+                output = "Theres already a tower there";
+                outputTimer = 30;
             } else if (isSelectorIsOnTileOfType('#') || isSelectorIsOnTileOfType('L') || isSelectorIsOnTileOfType('R')) {
-                System.out.println("You can't put a tower on roads");
+                output = "You can't put a tower on roads";
+                outputTimer = 30;
             } else if (gold < 50) {
-                System.out.println("You need 50 gold");
+                output = "You need 50 gold";
+                outputTimer = 30;
             } else {
                 Tower tower = new Tower(tower2Image, selector.x, selector.y, tileSize, tileSize, '2', 2, 1, 2, true);
                 tileMap[y][x] = '2';
@@ -581,17 +593,23 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             }
         }
 
+        //deletes towers when backspace is pressed
         if (e.getKeyCode() == 8) {
             if (isSelectorIsOnTileOfType('1') || isSelectorIsOnTileOfType('2')) {
                 if (confirmation == 1) {
-                    for(int i = 0; i < towers.size(); i++) {
-                        if(towers.get(i).x == selector.x && towers.get(i).y == selector.y) {
+                    for (int i = 0; i < towers.size(); i++) {
+                        if (towers.get(i).x == selector.x && towers.get(i).y == selector.y) {
                             tileMap[y][x] = ' ';
                             towers.remove(i);
+                            if (output.equals("Delete tower?")) {
+                                output = "";
+                                outputTimer = 0;
+                            }
                         }
                     }
                 } else {
-                    System.out.println("Delete tower?");
+                    output = "Delete tower?";
+                    outputTimer = 30;
                     confirmation = 1;
                 }
             }
