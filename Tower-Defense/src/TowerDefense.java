@@ -90,7 +90,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int boardHeight = (rowCount+1) * tileSize - tileSize * 2;
 
     private int animationCounter = 0;
-    private int gold = 30;
+    private int gold = 3000;
     private int confirmation = 0;
     private int baseHealth = 10;
     private String output = "";
@@ -125,10 +125,13 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '}
     };
 
+    private int mapMove = 0;
+    private int mapMovementCounter = 0;
+
     //for the enemy waves
     private int waveNumber = 1;
     private ArrayList<Integer> wave;
-    private int waveCounter = -200;
+    private int waveCounter = -20;
 
     ArrayList<Tile> tiles = new ArrayList<Tile>();
     ArrayList<Tower> towers = new ArrayList<Tower>();
@@ -238,7 +241,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     //Checks if the enemy entered is on the type of tile indicated by char type
     public boolean isEnemyIsOnTileOfType(char type, Enemy enemy) {
-        if(((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0 ) {
+        if(((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == mapMovementCounter % tileSize) {
             int x = (enemy.x - tileSize / 2) / tileSize + 1;
             int y = (enemy.y - tileSize / 2) / tileSize + 1;
             if(x >= 0 && y >= 0) {
@@ -512,12 +515,32 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         //System.out.println(waveCounter);
     }
 
+    public void moveMap() {
+        for (Enemy enemy : enemies) {
+            enemy.x--;
+        }
+        for (Tower tower : towers) {
+            tower.x--;
+        }
+        for (Tile tile : tiles) {
+            tile.x--;
+        }
+        selector.x--;
+        mapMovementCounter++;
+    }
+
     //preforms all the game's constantly repeated functions
     @Override
     public void actionPerformed(ActionEvent e) {
         move();
         attack();
         summon();
+        if (mapMove == 3) {
+            moveMap();
+            mapMove = 0;
+        } else {
+            mapMove++;
+        }
         repaint();
         if (baseHealth <= 0) {
             gameLoop.stop();

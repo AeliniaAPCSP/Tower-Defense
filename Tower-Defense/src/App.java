@@ -18,3 +18,16 @@ public class App {
 
     }
 }
+//To do
+
+//Making the game balanced better
+//Add way more enemies and towers
+//Making the game’s art, theme, and vibe more unique and better
+//Actual projectiles
+//Damage indicators of some form
+//More animated sprites
+//Sounds and music
+//Making the paths have curves where turns are
+//Map generation
+//More gambling
+//Soooo many more features to come
