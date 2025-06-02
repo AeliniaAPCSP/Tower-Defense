@@ -90,7 +90,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int boardHeight = (rowCount+1) * tileSize - tileSize * 2;
 
     private int animationCounter = 0;
-    private int gold = 3000;
+    private int gold = 30;
     private int confirmation = 0;
     private int baseHealth = 10;
     private String output = "";
@@ -569,7 +569,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 selector.y += tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == 65) {
-            if(selector.x != tileSize/2) {
+            if(selector.x != tileSize/2 - mapMovementCounter + ((int) mapMovementCounter / tileSize) * tileSize) {
                 selector.x -= tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == 68) {
