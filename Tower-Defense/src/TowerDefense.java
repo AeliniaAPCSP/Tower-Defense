@@ -111,17 +111,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     //# = road, L = left turn, R = right turn, ' ' = ground
     //1 = tower1, 2 = tower2 but those are only added to tileMap during the game
     private char[][] tileMap = {
-            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' '},
-            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' '},
-            {' ',' ','R','#','#','#','R',' ',' ',' ','#',' ',' '},
-            {' ',' ','#',' ',' ',' ','L','#','#','#','L',' ',' '},
-            {' ',' ','#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-            {' ',' ','#',' ',' ',' ','L','#','#','#','L',' ',' '},
-            {' ',' ','R','#','#','#','R',' ',' ',' ','#',' ',' '},
-            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ',' '},
-            {'#','#','#','#','#','#','R',' ',' ',' ','#',' ',' '},
-            {' ',' ',' ',' ',' ',' ','L','#','#','#','L',' ',' '},
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+            {' ',' ',' ',' ',' ',' ','R','#','#','#','R',' ',' '},
+            {' ',' ',' ',' ',' ',' ','#',' ',' ',' ','#',' ',' '},
+            {' ',' ',' ',' ',' ',' ','#',' ',' ',' ','L','#','#'},
+            {' ',' ','R','#','R',' ','#',' ',' ',' ',' ',' ',' '},
+            {' ',' ','#',' ','#',' ','#',' ',' ',' ',' ',' ',' '},
+            {'#','#','L',' ','#',' ','#',' ',' ',' ',' ',' ',' '},
+            {' ',' ',' ',' ','#',' ','#',' ',' ',' ',' ',' ',' '},
+            {' ',' ',' ',' ','L','#','L',' ',' ',' ',' ',' ',' '},
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '}
     };
 
@@ -129,7 +129,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private int mapMovementCounter = 0;
 
     //for the enemy waves
-    private int waveNumber = 1;
+    private int waveNumber = -1;
     private ArrayList<Integer> wave;
     private int waveCounter = -20;
 
@@ -177,6 +177,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         selector = new Tile(selectorImage1, tileSize/2, tileSize/2, tileSize, tileSize, 'S');
     }
 
+    public void mapShift() {
+        for (int i = 0; i < rowCount; i++) {
+            for (int j = 0; j < columnCount-1; j++) {
+                tileMap[i][j] = tileMap[i][j+1];
+            }
+        }
+        for (int i = 0; i < rowCount; i++) {
+            tileMap[i][columnCount-1] = ' ';
+        }
+    }
+
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         draw(g);
@@ -220,35 +231,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         } else if (!(output.equals(""))) {
             output = "";
         }
-    }
-
-    //Checks if the selector is on the type of tile indicated by char type
-    public boolean isSelectorIsOnTileOfType(char type) {
-        int x = (selector.x - tileSize / 2) / tileSize + 1;
-        int y = (selector.y - tileSize / 2) / tileSize + 1;
-        // for testing
-        /*if (tileMap[y][x] == type) {
-            System.out.println("true");
-            System.out.println(tileMap[y][x]);
-            System.out.println(x + " " + y);
-        } else {
-            System.out.println("false");
-            System.out.println(tileMap[y][x]);
-            System.out.println(x + " " + y);
-        }*/
-        return (tileMap[y][x] == type);
-    }
-
-    //Checks if the enemy entered is on the type of tile indicated by char type
-    public boolean isEnemyIsOnTileOfType(char type, Enemy enemy) {
-        if(((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == mapMovementCounter % tileSize) {
-            int x = (enemy.x - tileSize / 2) / tileSize + 1;
-            int y = (enemy.y - tileSize / 2) / tileSize + 1;
-            if(x >= 0 && y >= 0) {
-                return (tileMap[y][x] == type);
-            }
-        }
-        return false;
     }
 
     //terrifying block of if statements and so many operaters.
@@ -374,6 +356,36 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    //Checks if the selector is on the type of tile indicated by char type
+    public boolean isSelectorIsOnTileOfType(char type) {
+        int x = (selector.x - tileSize / 2) / tileSize + 1;
+        int y = (selector.y - tileSize / 2) / tileSize + 1;
+        // for testing
+        /*if (tileMap[y][x] == type) {
+            System.out.println("true");
+            System.out.println(tileMap[y][x]);
+            System.out.println(x + " " + y);
+        } else {
+            System.out.println("false");
+            System.out.println(tileMap[y][x]);
+            System.out.println(x + " " + y);
+        }*/
+        return (tileMap[y][x] == type);
+    }
+
+    //Checks if the enemy entered is on the type of tile indicated by char type
+    public boolean isEnemyIsOnTileOfType(char type, Enemy enemy) {
+        int x = (enemy.x - tileSize/2 + mapMovementCounter) / tileSize + 1;
+        int y = (enemy.y - tileSize/2) / tileSize + 1;
+        System.out.println("mapMovementCounter: " + mapMovementCounter);
+        System.out.println("x: " + x);
+        System.out.println("y: " + y);
+        if(x >= 0 && y >= 0) {
+            return (tileMap[y][x] == type);
+        }
+        return false;
+    }
+
     //moves all the enemies
     public void move() {
         for(Enemy enemy : enemies) {
@@ -396,7 +408,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 enemy.x += enemy.velocityX;
                 enemy.y += enemy.velocityY;
 
-                if (((enemy.x - tileSize / 2) + (enemy.y - tileSize / 2)) % tileSize == 0) {
+                System.out.println(((enemy.x - tileSize/2 + mapMovementCounter) + (enemy.y - tileSize/2)) % tileSize);
+                if (((enemy.x - tileSize/2 + mapMovementCounter) + (enemy.y - tileSize/2)) % tileSize == 0) {
                     if (isEnemyIsOnTileOfType('L', enemy)) {
                         if (enemy.direction == 'U') {
                             enemy.updateDirection('L');
@@ -496,14 +509,31 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
+    public int spawnX() {
+        if (((mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2) % tileSize/16 == 0) {
+            return (mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2 + 2;
+        }
+        return (mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2;
+    }
+
+    public int spawnY() {
+        for(int i = 0; i < rowCount; i++) {
+            if(tileMap[i][0] == '#') {
+                return (i - 1) * tileSize + tileSize/2;
+            }
+        }
+        return -1;
+    }
+
     //reads the ArrayList wave that createWave() creates
     public void summon() {
         if (waveCounter < waveNumber*50 + 100 && waveCounter > 0) {
             if (wave.get(waveCounter) == 1) {
-                Enemy enemy = new Enemy(enemy1Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '1', 375, 0);
+                Enemy enemy = new Enemy(enemy1Image, spawnX(), spawnY(), tileSize, tileSize, '1', 375, 0);
+                System.out.println("test: " + mapMovementCounter % (tileSize/16) + " " + mapMovementCounter);
                 enemies.add(enemy);
             } else if (wave.get(waveCounter) == 2) {
-                Enemy enemy = new Enemy(enemy2Image, -tileSize, tileSize * 7 + tileSize / 2, tileSize, tileSize, '2', 275, 2);
+                Enemy enemy = new Enemy(enemy2Image, spawnX(), spawnY(), tileSize, tileSize, '2', 275, 2);
                 enemies.add(enemy);
             }
         } else if (waveCounter == waveNumber*50 + 300) {
@@ -540,6 +570,11 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             mapMove = 0;
         } else {
             mapMove++;
+        }
+        if(mapMovementCounter >= tileSize) {
+            mapMovementCounter = 0;
+            mapShift();
+            loadMap();
         }
         repaint();
         if (baseHealth <= 0) {
