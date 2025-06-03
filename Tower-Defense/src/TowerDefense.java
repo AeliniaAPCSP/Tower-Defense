@@ -408,7 +408,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 enemy.x += enemy.velocityX;
                 enemy.y += enemy.velocityY;
 
-                System.out.println(((enemy.x - tileSize/2 + mapMovementCounter) + (enemy.y - tileSize/2)) % tileSize);
                 if (((enemy.x - tileSize/2 + mapMovementCounter) + (enemy.y - tileSize/2)) % tileSize == 0) {
                     if (isEnemyIsOnTileOfType('L', enemy)) {
                         if (enemy.direction == 'U') {
@@ -510,10 +509,8 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     }
 
     public int spawnX() {
-        if (((mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2) % tileSize/16 == 0) {
-            return (mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2 + 2;
-        }
-        return (mapMovementCounter % (tileSize/16)) - tileSize - tileSize/2;
+        System.out.println("mapmove: " + (mapMovementCounter % (tileSize/16)));
+        return -tileSize - tileSize/2 - (mapMovementCounter % (tileSize/16));
     }
 
     public int spawnY() {
@@ -530,7 +527,6 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         if (waveCounter < waveNumber*50 + 100 && waveCounter > 0) {
             if (wave.get(waveCounter) == 1) {
                 Enemy enemy = new Enemy(enemy1Image, spawnX(), spawnY(), tileSize, tileSize, '1', 375, 0);
-                System.out.println("test: " + mapMovementCounter % (tileSize/16) + " " + mapMovementCounter);
                 enemies.add(enemy);
             } else if (wave.get(waveCounter) == 2) {
                 Enemy enemy = new Enemy(enemy2Image, spawnX(), spawnY(), tileSize, tileSize, '2', 275, 2);
