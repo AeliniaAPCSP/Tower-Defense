@@ -107,6 +107,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
     private Image enemy2Image = new ImageIcon(getClass().getResource("./assets/enemy2.png")).getImage();
     private Image selectorImage1 = new ImageIcon(getClass().getResource("./assets/selector1.png")).getImage();
     private Image selectorImage2 = new ImageIcon(getClass().getResource("./assets/selector2.png")).getImage();
+    private Image enemySpawnerImage = new ImageIcon(getClass().getResource("./assets/enemySpawner.png")).getImage();
 
     //# = road, L = left turn, R = right turn, ' ' = ground
     //1 = tower1, 2 = tower2 but those are only added to tileMap during the game
@@ -119,7 +120,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
             {' ',' ',' ',' ',' ',' ',' ','#',' ',' ',' ','L','#','#','#'},
             {' ',' ',' ','R','#','R',' ','#',' ',' ',' ',' ',' ',' ',' '},
             {' ',' ',' ','#',' ','#',' ','#',' ',' ',' ',' ',' ',' ',' '},
-            {'#','#','#','L',' ','#',' ','#',' ',' ',' ',' ',' ',' ',' '},
+            {'#','#','$','L',' ','#',' ','#',' ',' ',' ',' ',' ',' ',' '},
             {' ',' ',' ',' ',' ','#',' ','#',' ',' ',' ',' ',' ',' ',' '},
             {' ',' ',' ',' ',' ','L','#','L',' ',' ',' ',' ',' ',' ',' '},
             {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '}
@@ -127,15 +128,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
 
     private int mapMove = 0;
     private int mapMovementCounter = 0;
+    private int mapShifts = 0;
 
     //for the enemy waves
-    private int waveNumber = -1;
+    private int waveNumber = 1;
     private ArrayList<Integer> wave;
     private int waveCounter = -20;
 
     ArrayList<Tile> tiles = new ArrayList<Tile>();
     ArrayList<Tower> towers = new ArrayList<Tower>();
     ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+    Tile enemySpawner;
     Tile selector;
 
     Timer gameLoop;
@@ -171,10 +174,17 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 } else if (tileMap[i][j] == ' ') {
                     Tile ground = new Tile(groundImage, j*tileSize, i*tileSize - tileSize/2, tileSize, tileSize, ' ');
                     tiles.add(ground);
+                } else if (tileMap[i][j] == '$') {
+                    enemySpawner = new Tile(enemySpawnerImage,  j*tileSize, i*tileSize - tileSize/2, tileSize, tileSize, '$');
                 }
             }
         }
-        selector = new Tile(selectorImage1, tileSize/2, tileSize/2, tileSize, tileSize, 'S');
+
+        if(mapShifts == 0){
+            selector = new Tile(selectorImage1, tileSize, tileSize/2, tileSize, tileSize, 'S');
+        } else if(selector.x == 0){
+            selector.x = tileSize;
+        }
     }
 
     public void mapShift() {
@@ -512,28 +522,14 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
     }
 
-    public int spawnX() {
-        System.out.println("mapmove: " + (mapMovementCounter % (tileSize/16)));
-        return -tileSize - tileSize/2 - (mapMovementCounter % (tileSize/16));
-    }
-
-    public int spawnY() {
-        for(int i = 0; i < rowCount; i++) {
-            if(tileMap[i][0] == '#') {
-                return (i - 1) * tileSize + tileSize/2;
-            }
-        }
-        return -1;
-    }
-
     //reads the ArrayList wave that createWave() creates
     public void summon() {
         if (waveCounter < waveNumber*50 + 100 && waveCounter > 0) {
             if (wave.get(waveCounter) == 1) {
-                Enemy enemy = new Enemy(enemy1Image, spawnX(), spawnY(), tileSize, tileSize, '1', 375, 0);
+                Enemy enemy = new Enemy(enemy1Image, enemySpawner.x, enemySpawner.y, tileSize, tileSize, '1', 375, 0);
                 enemies.add(enemy);
             } else if (wave.get(waveCounter) == 2) {
-                Enemy enemy = new Enemy(enemy2Image, spawnX(), spawnY(), tileSize, tileSize, '2', 275, 2);
+                Enemy enemy = new Enemy(enemy2Image, enemySpawner.x, enemySpawner.y, tileSize, tileSize, '2', 275, 2);
                 enemies.add(enemy);
             }
         } else if (waveCounter == waveNumber*50 + 300) {
@@ -573,6 +569,7 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
         }
         if(mapMovementCounter >= tileSize) {
             mapMovementCounter = 0;
+            mapShifts++;
             mapShift();
             loadMap();
         }
@@ -604,11 +601,11 @@ public class TowerDefense extends JPanel implements ActionListener, KeyListener 
                 selector.y += tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == 65) {
-            if(selector.x != tileSize/2 - mapMovementCounter + ((int) mapMovementCounter / tileSize) * tileSize) {
+            if(selector.x != tileSize - mapMovementCounter + ((int) mapMovementCounter / tileSize) * tileSize) {
                 selector.x -= tileSize;
             }
         } else if (e.getKeyCode() == KeyEvent.VK_RIGHT || e.getKeyCode() == 68) {
-            if (selector.x != rowCount * tileSize - tileSize*3/2) {
+            if (selector.x != columnCount * tileSize - tileSize*3 - mapMovementCounter) {
                 selector.x += tileSize;
             }
         }
